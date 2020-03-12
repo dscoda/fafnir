@@ -15,7 +15,7 @@ namespace Fafnir
             string line;
 
             System.IO.StreamReader file =
-                new System.IO.StreamReader(@"..\..\..\..\log_exmples\L0309001.log");
+                new System.IO.StreamReader(@"..\..\..\..\log_exmples\L0311048.log");
 
             string dateTimeRegEx = @"\d{2}\/\d{2}\/\d{4} - \d{2}:\d{2}:\d{2})";
 
