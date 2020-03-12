@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Fafnir.Models;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -20,23 +21,25 @@ namespace Fafnir
             System.IO.StreamReader file =
                 new System.IO.StreamReader(@"C:\tmp\log_exmples\L0309001.log");
 
+            string dateTimeRegEx = @"\d{2}\/\d{2}\/\d{4} - \d{2}:\d{2}:\d{2})";
+
             while ((line = file.ReadLine()) != null)
             {
-                var playerEnteredGamePattern = new Regex(@"L (?<date>\d{2}\/\d{2}\/\d{4} - \d{2}:\d{2}:\d{2}): ""(?<player>.*?)"" entered the game");
-                var playerJoinedTeamPattern = new Regex(@"L (?<date>\d{2}\/\d{2}\/\d{4} - \d{2}:\d{2}:\d{2}): ""(?<player>.*?)"" joined team ""(?<team>.*?)""");
-                var playerDisconnectedPattern = new Regex(@"L (?<date>\d{2}\/\d{2}\/\d{4} - \d{2}:\d{2}:\d{2}): ""(?<player>.*?)"" disconnected");
-                //var playerInfectedAnotherPlayerPattern = new Regex(@"L (?<date>\d{2}\/\d{2}\/\d{4} - \d{2}:\d{2}:\d{2}): ""(?<player>.*?)"" triggered ""Medic_Infection"" against ""(?<victim>.*?)""");
-                var playerChangedRolePattern = new Regex(@"L (?<date>\d{2}\/\d{2}\/\d{4} - \d{2}:\d{2}:\d{2}): ""(?<player>.*?)"" changed role to ""(?<newrole>.*?)""");
-                var playerKillOtherPlayerPattern = new Regex(@"L (?<date>\d{2}\/\d{2}\/\d{4} - \d{2}:\d{2}:\d{2}): ""(?<killer>.*?)"" killed ""(?<victim>.*?)"" with ""(?<weapon>.*?)""");
-                var logFileClosedPattern = new Regex(@"L (?<date>\d{2}\/\d{2}\/\d{4} - \d{2}:\d{2}:\d{2}): Log file closed");
-                var loadingMapPattern = new Regex(@"L (?<date>\d{2}\/\d{2}\/\d{4} - \d{2}:\d{2}:\d{2}): Loading map ""(?<map>.*?)""");
+                var playerEnteredGamePattern = new Regex(@$"L (?<date>{dateTimeRegEx}: ""(?<player>.*?)"" entered the game");
+                var playerJoinedTeamPattern = new Regex(@$"L (?<date>{dateTimeRegEx}: ""(?<player>.*?)"" joined team ""(?<team>.*?)""");
+                var playerDisconnectedPattern = new Regex(@$"L (?<date>{dateTimeRegEx}: ""(?<player>.*?)"" disconnected");
+                //var playerInfectedAnotherPlayerPattern = new Regex(@$"L (?<date>{dateTimeRegEx}: ""(?<player>.*?)"" triggered ""Medic_Infection"" against ""(?<victim>.*?)""");
+                var playerChangedRolePattern = new Regex(@$"L (?<date>{dateTimeRegEx}: ""(?<player>.*?)"" changed role to ""(?<newrole>.*?)""");
+                var playerKillOtherPlayerPattern = new Regex(@$"L (?<date>{dateTimeRegEx}: ""(?<killer>.*?)"" killed ""(?<victim>.*?)"" with ""(?<weapon>.*?)""");
+                var logFileClosedPattern = new Regex(@$"L (?<date>{dateTimeRegEx}: Log file closed");
+                var loadingMapPattern = new Regex(@$"L (?<date>{dateTimeRegEx}: Loading map ""(?<map>.*?)""");
 
                 if (playerEnteredGamePattern.IsMatch(line))
                 {
                     var matched = playerEnteredGamePattern.Match(line);
 
-                    var dateTime = matched.Groups[1].Value;
-                    var playerData = matched.Groups[2].Value;
+                    var dateTime = matched.Groups["date"].Value;
+                    var playerData = matched.Groups["player"].Value;
 
                     PlayerEnteredGame(dateTime, playerData);
                 }
@@ -236,7 +239,7 @@ namespace Fafnir
             }
             else
             {
-                currentPlayer.Teams.Add(new Team
+                currentPlayer.Teams.Add(new Player.Team
                 {
                     Name = teamName,
                     JoinTime = time,
@@ -374,7 +377,7 @@ namespace Fafnir
                     JoinTime = null,
                     LeaveTime = null,
                     SecondsPlayed = 0,
-                    Teams = new List<Team> { },
+                    Teams = new List<Player.Team> { },
                     Roles = new List<Role> { }
                 };
 
@@ -387,50 +390,5 @@ namespace Fafnir
 
             return player;
         }
-    }
-
-    public class Player
-    {
-        public string Name;
-        public string SteamId;
-        public DateTime? JoinTime;
-        public DateTime? LeaveTime;
-        public double SecondsPlayed;
-        public List<Team> Teams;
-        public string currentTeam;
-        public string currentRole;
-        public List<Role> Roles;
-        public int KillCount;
-        public int DeathCount;
-    }
-
-    public class Team
-    {
-        public string Name;
-        public DateTime JoinTime;
-        public DateTime? LeaveTime;
-        public double SecondsPlayed;
-    }
-
-    public class Role
-    {
-        public string Name;
-        public DateTime StartTime;
-        public DateTime? EndTime;
-        public double SecondsPlayed;
-    }
-
-    public class Kill
-    {
-        public DateTime TimeStamp;
-        public string KillerName;
-        public string KillerId;
-        public string killerTeam;
-        public string KillerRole;
-        public string VictimName;
-        public string VictimId;
-        public string VictimTeam;
-        public string VictimRole;
-        public string Weapon;
     }
 }
