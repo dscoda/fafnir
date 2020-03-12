@@ -8,18 +8,14 @@ namespace Fafnir
 {
     class Program
     {
-        public static List<Player> _players = new List<Player> { };
-        public static DateTime _matchStartTime = new DateTime();
-        public static DateTime _matchEndTime = new DateTime();
-        public static string _map = string.Empty;
-        public static List<Kill> _kills = new List<Kill> { };
+        public static MatchLog _matchLog = new MatchLog();
 
         static void Main(string[] args)
         {
             string line;
 
             System.IO.StreamReader file =
-                new System.IO.StreamReader(@"C:\tmp\log_exmples\L0309001.log");
+                new System.IO.StreamReader(@"..\..\..\..\log_exmples\L0309001.log");
 
             string dateTimeRegEx = @"\d{2}\/\d{2}\/\d{4} - \d{2}:\d{2}:\d{2})";
 
@@ -108,16 +104,16 @@ namespace Fafnir
                 }
             }
 
-            foreach (var player in _players)
+            foreach (var player in _matchLog.players)
             {
                 if (player.LeaveTime == null)
                 {
-                    player.LeaveTime = _matchEndTime;
+                    player.LeaveTime = _matchLog.matchEndTime;
                     player.SecondsPlayed += ((DateTime)player.LeaveTime - (DateTime)player.JoinTime).TotalSeconds;
 
                     foreach (var team in player.Teams.Where(w => w.LeaveTime == null))
                     {
-                        team.LeaveTime = _matchEndTime;
+                        team.LeaveTime = _matchLog.matchEndTime;
                         team.SecondsPlayed += ((DateTime)team.LeaveTime - (DateTime)team.JoinTime).TotalSeconds;
                     }
                 }
@@ -126,12 +122,12 @@ namespace Fafnir
 
                 foreach (var openRole in openRoles)
                 {
-                    openRole.EndTime = _matchEndTime;
+                    openRole.EndTime = _matchLog.matchEndTime;
                     openRole.SecondsPlayed += ((DateTime)openRole.EndTime - openRole.StartTime).TotalSeconds;
                 }
             }
 
-            foreach (var player in _players)
+            foreach (var player in _matchLog.players)
             {
                 Console.WriteLine("Player: {0}", player.Name);
                 Console.WriteLine("     Time Played: {0} seconds", player.SecondsPlayed);
@@ -139,8 +135,8 @@ namespace Fafnir
                 Console.WriteLine("     StartTime: {0}", player.JoinTime);
                 Console.WriteLine("     EndTime: {0}", player.LeaveTime);
 
-                var kills = _kills.Where(c => c.KillerName == player.Name && c.KillerId == player.SteamId);
-                var deaths = _kills.Where(c => c.VictimName == player.Name && c.VictimId == player.SteamId);
+                var kills = _matchLog.kills.Where(c => c.KillerName == player.Name && c.KillerId == player.SteamId);
+                var deaths = _matchLog.kills.Where(c => c.VictimName == player.Name && c.VictimId == player.SteamId);
 
                 var favWeapon = (from k in kills
                                  group k by k.Weapon into grp
@@ -172,10 +168,10 @@ namespace Fafnir
                 }
             }
 
-            Console.WriteLine("Map: {0}", _map);
-            Console.WriteLine("Start Time: {0}", _matchStartTime);
-            Console.WriteLine("End Time: {0}", _matchEndTime);
-            Console.WriteLine("Elapsed Time(min): {0}", (_matchEndTime - _matchStartTime).TotalSeconds);
+            Console.WriteLine("Map: {0}", _matchLog.map);
+            Console.WriteLine("Start Time: {0}", _matchLog.matchStartTime);
+            Console.WriteLine("End Time: {0}", _matchLog.matchEndTime);
+            Console.WriteLine("Elapsed Time(min): {0}", (_matchLog.matchEndTime - _matchLog.matchStartTime).TotalSeconds);
 
             Console.WriteLine("Press Key To Exit...");
             Console.ReadKey();
@@ -187,7 +183,7 @@ namespace Fafnir
             var victim = GetPlayer(victimData);
             var time = GetEntryTime(dateTimeData);
 
-            _kills.Add(new Kill
+            _matchLog.kills.Add(new Kill
             {
                 TimeStamp = time,
                 KillerName = killer.Name,
@@ -332,13 +328,13 @@ namespace Fafnir
 
         private static void LoadMap(string dateTime, string map)
         {
-            _map = map;
-            _matchStartTime = GetEntryTime(dateTime);
+            _matchLog.map = map;
+            _matchLog.matchStartTime = GetEntryTime(dateTime);
         }
 
         private static void MatchEnded(string dateTime)
         {
-            _matchEndTime = GetEntryTime(dateTime);
+            _matchLog.matchEndTime = GetEntryTime(dateTime);
         }
 
         private static void PlayerEnteredGame(string dateTimeData, string playerData)
@@ -364,7 +360,7 @@ namespace Fafnir
             var steamId = matched.Groups[3].Value;
             var team = matched.Groups[4].Value;
 
-            var player = (from p in _players
+            var player = (from p in _matchLog.players
                           where p.Name == name && p.SteamId == steamId
                           select p).SingleOrDefault();
 
@@ -381,9 +377,9 @@ namespace Fafnir
                     Roles = new List<Role> { }
                 };
 
-                _players.Add(newPlayer);
+                _matchLog.players.Add(newPlayer);
 
-                player = (from p in _players
+                player = (from p in _matchLog.players
                           where p.Name == name && p.SteamId == steamId
                           select p).SingleOrDefault();
             }
