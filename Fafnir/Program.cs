@@ -25,7 +25,8 @@ namespace Fafnir
             {
                 new PlayerEnteredGame(_matchLog),
                 new PlayerJoinedTeam(_matchLog),
-                new PlayerDisconnected(_matchLog)
+                new PlayerDisconnected(_matchLog),
+                new PlayerChangedRole(_matchLog)
             };
 
             while ((line = file.ReadLine()) != null)
@@ -39,8 +40,6 @@ namespace Fafnir
                     match.Execute(line);
                 }
                 
-                
-                var playerChangedRolePattern = new Regex(@$"L (?<date>{dateTimeRegEx}: ""(?<player>.*?)"" changed role to ""(?<newrole>.*?)""");
                 var playerKillOtherPlayerPattern = new Regex(@$"L (?<date>{dateTimeRegEx}: ""(?<killer>.*?)"" killed ""(?<victim>.*?)"" with ""(?<weapon>.*?)""");
                 var logFileClosedPattern = new Regex(@$"L (?<date>{dateTimeRegEx}: Log file closed");
                 var loadingMapPattern = new Regex(@$"L (?<date>{dateTimeRegEx}: Loading map ""(?<map>.*?)""");
@@ -65,17 +64,6 @@ namespace Fafnir
                     var dateTime = matched.Groups[1].Value;
 
                     MatchEnded(dateTime);
-                }
-
-                if (playerChangedRolePattern.IsMatch(line))
-                {
-                    var matched = playerChangedRolePattern.Match(line);
-
-                    var dateTime = matched.Groups[1].Value;
-                    var playerData = matched.Groups[2].Value;
-                    var newRole = matched.Groups[3].Value;
-
-                    PlayerChangedRole(dateTime, playerData, newRole);
                 }
 
                 if (playerKillOtherPlayerPattern.IsMatch(line))
@@ -184,46 +172,7 @@ namespace Fafnir
                 Weapon = weapon
             });
         }
-
-        private static void PlayerChangedRole(string dateTimeData, string playerData, string newRole)
-        {
-            var player = GetPlayer(playerData);
-            var time = GetEntryTime(dateTimeData);
-            var playerRole = player.Roles.SingleOrDefault(s => s.Name == newRole);
-
-            var openRoles = (from r in player.Roles
-                             where r.Name != newRole && r.EndTime == null
-                             select r);
-
-            foreach (var openRole in openRoles)
-            {
-                openRole.EndTime = time;
-                openRole.SecondsPlayed += ((DateTime)openRole.EndTime - openRole.StartTime).TotalSeconds;
-            }
-
-            if (playerRole == null)
-            {
-                player.Roles.Add(new Role
-                {
-                    Name = newRole,
-                    StartTime = time,
-                    EndTime = null,
-                    SecondsPlayed = 0
-                });
-            }
-            else
-            {
-                if (playerRole != null)
-                {
-                    playerRole.StartTime = time;
-                    playerRole.EndTime = null;
-                }
-            }
-
-            player.currentRole = newRole;
-        }
-
-
+        
         //todo: remove once refactor is done
         private static DateTime GetEntryTime(string dateTimeData)
         {
