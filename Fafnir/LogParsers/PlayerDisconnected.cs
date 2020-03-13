@@ -20,8 +20,8 @@ namespace Fafnir.LogParsers
         {
             var matched = playerDisconnectedPattern.Match(input);
 
-            var dateTime = matched.Groups[1].Value;
-            var playerData = matched.Groups[2].Value;
+            var dateTime = matched.Groups["date"].Value;
+            var playerData = matched.Groups["player"].Value;
 
             Player currentPlayer = _matchLog.GetPlayer(playerData);
             DateTime leaveTime = _matchLog.GetEntryTime(dateTime);
