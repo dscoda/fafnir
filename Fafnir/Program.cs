@@ -24,7 +24,8 @@ namespace Fafnir
             var parsers = new IHLDSLogParser[]
             {
                 new PlayerEnteredGame(_matchLog),
-                new PlayerJoinedTeam(_matchLog)
+                new PlayerJoinedTeam(_matchLog),
+                new PlayerDisconnected(_matchLog)
             };
 
             while ((line = file.ReadLine()) != null)
@@ -38,7 +39,7 @@ namespace Fafnir
                     match.Execute(line);
                 }
                 
-                var playerDisconnectedPattern = new Regex(@$"L (?<date>{dateTimeRegEx}: ""(?<player>.*?)"" disconnected");
+                
                 var playerChangedRolePattern = new Regex(@$"L (?<date>{dateTimeRegEx}: ""(?<player>.*?)"" changed role to ""(?<newrole>.*?)""");
                 var playerKillOtherPlayerPattern = new Regex(@$"L (?<date>{dateTimeRegEx}: ""(?<killer>.*?)"" killed ""(?<victim>.*?)"" with ""(?<weapon>.*?)""");
                 var logFileClosedPattern = new Regex(@$"L (?<date>{dateTimeRegEx}: Log file closed");
@@ -64,16 +65,6 @@ namespace Fafnir
                     var dateTime = matched.Groups[1].Value;
 
                     MatchEnded(dateTime);
-                }
-
-                if (playerDisconnectedPattern.IsMatch(line))
-                {
-                    var matched = playerDisconnectedPattern.Match(line);
-
-                    var dateTime = matched.Groups[1].Value;
-                    var playerData = matched.Groups[2].Value;
-
-                    PlayerDisconnected(dateTime, playerData);
                 }
 
                 if (playerChangedRolePattern.IsMatch(line))
@@ -232,37 +223,6 @@ namespace Fafnir
             player.currentRole = newRole;
         }
 
-        private static void PlayerDisconnected(string dateTimeData, string playerData)
-        {
-            Player currentPlayer;
-
-            currentPlayer = GetPlayer(playerData);
-            DateTime leaveTime = GetEntryTime(dateTimeData);
-
-            currentPlayer.LeaveTime = leaveTime;
-
-            if (currentPlayer.LeaveTime != null && currentPlayer.JoinTime != null)
-            {
-                currentPlayer.SecondsPlayed += ((DateTime)currentPlayer.LeaveTime - (DateTime)currentPlayer.JoinTime).TotalSeconds;
-            }
-
-            foreach (var team in currentPlayer.Teams.Where(w => w.LeaveTime == null))
-            {
-                team.LeaveTime = leaveTime;
-                team.SecondsPlayed += ((DateTime)team.LeaveTime - (DateTime)team.JoinTime).TotalSeconds;
-
-            }
-
-            var openRoles = (from r in currentPlayer.Roles
-                             where r.EndTime == null
-                             select r);
-
-            foreach (var openRole in openRoles)
-            {
-                openRole.EndTime = leaveTime;
-                openRole.SecondsPlayed += ((DateTime)openRole.EndTime - openRole.StartTime).TotalSeconds;
-            }
-        }
 
         //todo: remove once refactor is done
         private static DateTime GetEntryTime(string dateTimeData)
