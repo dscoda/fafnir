@@ -27,6 +27,8 @@ namespace Fafnir.LogParsers
             var currentPlayer = _matchLog.GetPlayer(playerData);
             var time = _matchLog.GetEntryTime(dateTime);
             var team = currentPlayer.Teams.SingleOrDefault(s => s.Name == teamName);
+            
+            currentPlayer.currentTeam = teamName;
 
             var openTeamEntries = (from t in currentPlayer.Teams
                                    where t.LeaveTime == null && t.Name != teamName
