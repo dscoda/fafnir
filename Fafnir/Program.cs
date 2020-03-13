@@ -17,16 +17,16 @@ namespace Fafnir
 
             System.IO.StreamReader file =
                 new System.IO.StreamReader(@"..\..\..\..\log_exmples\L0311048.log");
-
-            //todo: remove once refactor is done
-            string dateTimeRegEx = @"\d{2}\/\d{2}\/\d{4} - \d{2}:\d{2}:\d{2})";
-
+            
             var parsers = new IHLDSLogParser[]
             {
                 new PlayerEnteredGame(_matchLog),
                 new PlayerJoinedTeam(_matchLog),
                 new PlayerDisconnected(_matchLog),
-                new PlayerChangedRole(_matchLog)
+                new PlayerChangedRole(_matchLog),
+                new PlayerKillOtherPlayer(_matchLog),
+                new LoadingMap(_matchLog),
+                new LogFileClosed(_matchLog)
             };
 
             while ((line = file.ReadLine()) != null)
@@ -39,69 +39,13 @@ namespace Fafnir
                 {
                     match.Execute(line);
                 }
-                
-                var playerKillOtherPlayerPattern = new Regex(@$"L (?<date>{dateTimeRegEx}: ""(?<killer>.*?)"" killed ""(?<victim>.*?)"" with ""(?<weapon>.*?)""");
-                var logFileClosedPattern = new Regex(@$"L (?<date>{dateTimeRegEx}: Log file closed");
-                var loadingMapPattern = new Regex(@$"L (?<date>{dateTimeRegEx}: Loading map ""(?<map>.*?)""");
 
                 //todo: implement this...
                 //var playerInfectedAnotherPlayerPattern = new Regex(@$"L (?<date>{dateTimeRegEx}: ""(?<player>.*?)"" triggered ""Medic_Infection"" against ""(?<victim>.*?)""");
-
-                if (loadingMapPattern.IsMatch(line))
-                {
-                    var matched = loadingMapPattern.Match(line);
-
-                    var dateTime = matched.Groups[1].Value;
-                    var map = matched.Groups[2].Value;
-
-                    LoadMap(dateTime, map);
-                }
-
-                if (logFileClosedPattern.IsMatch(line))
-                {
-                    var matched = logFileClosedPattern.Match(line);
-
-                    var dateTime = matched.Groups[1].Value;
-
-                    MatchEnded(dateTime);
-                }
-
-                if (playerKillOtherPlayerPattern.IsMatch(line))
-                {
-                    var matched = playerKillOtherPlayerPattern.Match(line);
-
-                    var dateTime = matched.Groups[1].Value;
-                    var killerData = matched.Groups[2].Value;
-                    var victimData = matched.Groups[3].Value;
-                    var weapon = matched.Groups[4].Value;
-
-                    PlayerKilledPlayer(dateTime, killerData, victimData, weapon);
-                }
             }
 
-            foreach (var player in _matchLog.players)
-            {
-                if (player.LeaveTime == null)
-                {
-                    player.LeaveTime = _matchLog.matchEndTime;
-                    player.SecondsPlayed += ((DateTime)player.LeaveTime - (DateTime)player.JoinTime).TotalSeconds;
-
-                    foreach (var team in player.Teams.Where(w => w.LeaveTime == null))
-                    {
-                        team.LeaveTime = _matchLog.matchEndTime;
-                        team.SecondsPlayed += ((DateTime)team.LeaveTime - (DateTime)team.JoinTime).TotalSeconds;
-                    }
-                }
-
-                var openRoles = (from r in player.Roles where r.EndTime == null select r);
-
-                foreach (var openRole in openRoles)
-                {
-                    openRole.EndTime = _matchLog.matchEndTime;
-                    openRole.SecondsPlayed += ((DateTime)openRole.EndTime - openRole.StartTime).TotalSeconds;
-                }
-            }
-
+            
+            //console output for now...
             foreach (var player in _matchLog.players)
             {
                 Console.WriteLine("Player: {0}", player.Name);
@@ -130,6 +74,8 @@ namespace Fafnir
                 {
                     Console.WriteLine("          Team: {0}", team.Name);
                     Console.WriteLine("          Time Played: {0}", team.SecondsPlayed);
+                    Console.WriteLine("          Kills: {0}", kills.Count(c => c.killerTeam == team.Name));
+                    Console.WriteLine("          Deaths: {0}", deaths.Count(c => c.VictimTeam == team.Name));
                     Console.WriteLine("          -----------------");
                 }
 
@@ -150,91 +96,6 @@ namespace Fafnir
 
             Console.WriteLine("Press Key To Exit...");
             Console.ReadKey();
-        }
-
-        private static void PlayerKilledPlayer(string dateTimeData, string killerData, string victimData, string weapon)
-        {
-            var killer = GetPlayer(killerData);
-            var victim = GetPlayer(victimData);
-            var time = GetEntryTime(dateTimeData);
-
-            _matchLog.kills.Add(new Kill
-            {
-                TimeStamp = time,
-                KillerName = killer.Name,
-                KillerId = killer.SteamId,
-                KillerRole = killer.currentRole,
-                killerTeam = killer.currentTeam,
-                VictimName = victim.Name,
-                VictimId = victim.SteamId,
-                VictimRole = victim.currentRole,
-                VictimTeam = victim.currentTeam,
-                Weapon = weapon
-            });
-        }
-        
-        //todo: remove once refactor is done
-        private static DateTime GetEntryTime(string dateTimeData)
-        {
-            var dateTimePattern = new Regex(@"(?<date>\d{2}\/\d{2}\/\d{4}) - (?<time>\d{2}:\d{2}:\d{2})");
-
-            var matched = dateTimePattern.Match(dateTimeData);
-
-            var date = matched.Groups[1].Value;
-            var time = matched.Groups[2].Value;
-
-            return DateTime.Parse(date + " " + time);
-        }
-
-        private static void LoadMap(string dateTime, string map)
-        {
-            _matchLog.map = map;
-            _matchLog.matchStartTime = GetEntryTime(dateTime);
-        }
-
-        private static void MatchEnded(string dateTime)
-        {
-            _matchLog.matchEndTime = GetEntryTime(dateTime);
-        }
-
-
-        //todo: remove once refactor is done
-        private static Player GetPlayer(string playerData)
-        {
-            var playerDataPattern = new Regex(@"(?<name>.*?)<(?<localId>.*?)><(?<steamId>.*?)><(?<team>.*?)>");
-
-            var matched = playerDataPattern.Match(playerData);
-
-            var name = matched.Groups[1].Value;
-            var localId = matched.Groups[2].Value;
-            var steamId = matched.Groups[3].Value;
-            var team = matched.Groups[4].Value;
-
-            var player = (from p in _matchLog.players
-                          where p.Name == name && p.SteamId == steamId
-                          select p).SingleOrDefault();
-
-            if (player == null)
-            {
-                var newPlayer = new Player
-                {
-                    Name = name,
-                    SteamId = steamId,
-                    JoinTime = null,
-                    LeaveTime = null,
-                    SecondsPlayed = 0,
-                    Teams = new List<Player.Team> { },
-                    Roles = new List<Role> { }
-                };
-
-                _matchLog.players.Add(newPlayer);
-
-                player = (from p in _matchLog.players
-                          where p.Name == name && p.SteamId == steamId
-                          select p).SingleOrDefault();
-            }
-
-            return player;
         }
     }
 }

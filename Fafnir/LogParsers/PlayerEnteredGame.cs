@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 
 namespace Fafnir.LogParsers
 {
-    class PlayerEnteredGame : IHLDSLogParser
+    public class PlayerEnteredGame : IHLDSLogParser
     {
         private MatchLog _matchLog;
         private static string dateTimeRegEx = @"\d{2}\/\d{2}\/\d{4} - \d{2}:\d{2}:\d{2}";
