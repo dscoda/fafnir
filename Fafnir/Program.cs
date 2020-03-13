@@ -1,4 +1,5 @@
-﻿using Fafnir.Models;
+﻿using Fafnir.LogParsers;
+using Fafnir.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,28 +18,34 @@ namespace Fafnir
             System.IO.StreamReader file =
                 new System.IO.StreamReader(@"..\..\..\..\log_exmples\L0311048.log");
 
+            //todo: remove once refactor is done
             string dateTimeRegEx = @"\d{2}\/\d{2}\/\d{4} - \d{2}:\d{2}:\d{2})";
+
+            var parsers = new[]
+            {
+                new PlayerEnteredGame(_matchLog)
+            };
 
             while ((line = file.ReadLine()) != null)
             {
-                var playerEnteredGamePattern = new Regex(@$"L (?<date>{dateTimeRegEx}: ""(?<player>.*?)"" entered the game");
+                var match = (from p in parsers
+                             where p.IsMatch(line)
+                             select p).SingleOrDefault();
+
+                if(match != null)
+                {
+                    match.Execute(line);
+                }
+                
                 var playerJoinedTeamPattern = new Regex(@$"L (?<date>{dateTimeRegEx}: ""(?<player>.*?)"" joined team ""(?<team>.*?)""");
                 var playerDisconnectedPattern = new Regex(@$"L (?<date>{dateTimeRegEx}: ""(?<player>.*?)"" disconnected");
-                //var playerInfectedAnotherPlayerPattern = new Regex(@$"L (?<date>{dateTimeRegEx}: ""(?<player>.*?)"" triggered ""Medic_Infection"" against ""(?<victim>.*?)""");
                 var playerChangedRolePattern = new Regex(@$"L (?<date>{dateTimeRegEx}: ""(?<player>.*?)"" changed role to ""(?<newrole>.*?)""");
                 var playerKillOtherPlayerPattern = new Regex(@$"L (?<date>{dateTimeRegEx}: ""(?<killer>.*?)"" killed ""(?<victim>.*?)"" with ""(?<weapon>.*?)""");
                 var logFileClosedPattern = new Regex(@$"L (?<date>{dateTimeRegEx}: Log file closed");
                 var loadingMapPattern = new Regex(@$"L (?<date>{dateTimeRegEx}: Loading map ""(?<map>.*?)""");
 
-                if (playerEnteredGamePattern.IsMatch(line))
-                {
-                    var matched = playerEnteredGamePattern.Match(line);
-
-                    var dateTime = matched.Groups["date"].Value;
-                    var playerData = matched.Groups["player"].Value;
-
-                    PlayerEnteredGame(dateTime, playerData);
-                }
+                //todo: implement this...
+                //var playerInfectedAnotherPlayerPattern = new Regex(@$"L (?<date>{dateTimeRegEx}: ""(?<player>.*?)"" triggered ""Medic_Infection"" against ""(?<victim>.*?)""");
 
                 if (loadingMapPattern.IsMatch(line))
                 {
@@ -314,6 +321,8 @@ namespace Fafnir
                 openRole.SecondsPlayed += ((DateTime)openRole.EndTime - openRole.StartTime).TotalSeconds;
             }
         }
+
+        //todo: remove once refactor is done
         private static DateTime GetEntryTime(string dateTimeData)
         {
             var dateTimePattern = new Regex(@"(?<date>\d{2}\/\d{2}\/\d{4}) - (?<time>\d{2}:\d{2}:\d{2})");
@@ -337,18 +346,8 @@ namespace Fafnir
             _matchLog.matchEndTime = GetEntryTime(dateTime);
         }
 
-        private static void PlayerEnteredGame(string dateTimeData, string playerData)
-        {
-            var joinedTime = GetEntryTime(dateTimeData);
 
-            Player currentPlayer;
-
-            currentPlayer = GetPlayer(playerData);
-
-            currentPlayer.JoinTime = joinedTime;
-            currentPlayer.LeaveTime = null;
-        }
-
+        //todo: remove once refactor is done
         private static Player GetPlayer(string playerData)
         {
             var playerDataPattern = new Regex(@"(?<name>.*?)<(?<localId>.*?)><(?<steamId>.*?)><(?<team>.*?)>");
