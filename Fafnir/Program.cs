@@ -21,9 +21,10 @@ namespace Fafnir
             //todo: remove once refactor is done
             string dateTimeRegEx = @"\d{2}\/\d{2}\/\d{4} - \d{2}:\d{2}:\d{2})";
 
-            var parsers = new[]
+            var parsers = new IHLDSLogParser[]
             {
-                new PlayerEnteredGame(_matchLog)
+                new PlayerEnteredGame(_matchLog),
+                new PlayerJoinedTeam(_matchLog)
             };
 
             while ((line = file.ReadLine()) != null)
@@ -37,7 +38,6 @@ namespace Fafnir
                     match.Execute(line);
                 }
                 
-                var playerJoinedTeamPattern = new Regex(@$"L (?<date>{dateTimeRegEx}: ""(?<player>.*?)"" joined team ""(?<team>.*?)""");
                 var playerDisconnectedPattern = new Regex(@$"L (?<date>{dateTimeRegEx}: ""(?<player>.*?)"" disconnected");
                 var playerChangedRolePattern = new Regex(@$"L (?<date>{dateTimeRegEx}: ""(?<player>.*?)"" changed role to ""(?<newrole>.*?)""");
                 var playerKillOtherPlayerPattern = new Regex(@$"L (?<date>{dateTimeRegEx}: ""(?<killer>.*?)"" killed ""(?<victim>.*?)"" with ""(?<weapon>.*?)""");
@@ -74,17 +74,6 @@ namespace Fafnir
                     var playerData = matched.Groups[2].Value;
 
                     PlayerDisconnected(dateTime, playerData);
-                }
-
-                if (playerJoinedTeamPattern.IsMatch(line))
-                {
-                    var matched = playerJoinedTeamPattern.Match(line);
-
-                    var dateTime = matched.Groups[1].Value;
-                    var playerData = matched.Groups[2].Value;
-                    var team = matched.Groups[3].Value;
-
-                    PlayerJoinedTeam(dateTime, playerData, team);
                 }
 
                 if (playerChangedRolePattern.IsMatch(line))
@@ -203,53 +192,6 @@ namespace Fafnir
                 VictimTeam = victim.currentTeam,
                 Weapon = weapon
             });
-        }
-
-        private static void PlayerJoinedTeam(string dateTimeData, string playerData, string teamName)
-        {
-            var currentPlayer = GetPlayer(playerData);
-            var time = GetEntryTime(dateTimeData);
-            var team = currentPlayer.Teams.SingleOrDefault(s => s.Name == teamName);
-
-            var openTeamEntries = (from t in currentPlayer.Teams
-                                   where t.LeaveTime == null && t.Name != teamName
-                                   select t);
-
-            foreach (var openTeam in openTeamEntries)
-            {
-                openTeam.LeaveTime = time;
-
-                openTeam.SecondsPlayed += ((DateTime)openTeam.LeaveTime - (DateTime)openTeam.JoinTime).TotalSeconds;
-            }
-
-            var openRoles = (from r in currentPlayer.Roles
-                             where r.EndTime == null
-                             select r);
-
-            foreach (var openRole in openRoles)
-            {
-                openRole.EndTime = time;
-                openRole.SecondsPlayed += ((DateTime)openRole.EndTime - openRole.StartTime).TotalSeconds;
-            }
-
-            if (team != null)
-            {
-                if (team.LeaveTime != null)
-                {
-                    team.LeaveTime = null;
-                    team.JoinTime = time;
-                }
-            }
-            else
-            {
-                currentPlayer.Teams.Add(new Player.Team
-                {
-                    Name = teamName,
-                    JoinTime = time,
-                    LeaveTime = null,
-                    SecondsPlayed = 0,
-                });
-            }
         }
 
         private static void PlayerChangedRole(string dateTimeData, string playerData, string newRole)
