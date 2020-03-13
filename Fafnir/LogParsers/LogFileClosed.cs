@@ -20,7 +20,7 @@ namespace Fafnir.LogParsers
         {
             var matched = logFileClosedPattern.Match(input);
 
-            var dateTime = matched.Groups[1].Value;
+            var dateTime = matched.Groups["date"].Value;
 
             _matchLog.matchEndTime = _matchLog.GetEntryTime(dateTime);
 
