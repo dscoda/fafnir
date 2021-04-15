@@ -6,6 +6,7 @@ namespace Fafnir.Models
     public class Player
     {
         public string Name;
+        public string LocalId;
         public string SteamId;
         public DateTime? JoinTime;
         public DateTime? LeaveTime;

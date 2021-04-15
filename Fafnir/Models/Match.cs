@@ -44,7 +44,7 @@ namespace Fafnir.Models
             var team = matched.Groups[4].Value;
 
             var player = (from p in Players
-                          where p.Name == name && p.SteamId == steamId
+                          where (p.Name == name && p.SteamId == steamId) || (p.LocalId == localId && !string.IsNullOrEmpty(localId) && !string.IsNullOrEmpty(p.LocalId))
                           select p).SingleOrDefault();
 
             if (player == null)
