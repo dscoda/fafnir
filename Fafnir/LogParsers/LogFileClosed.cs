@@ -26,7 +26,7 @@ namespace Fafnir.LogParsers
 
             foreach (var player in _matchLog.players)
             {
-                if (player.LeaveTime == null)
+                if (player.LeaveTime == null && player.JoinTime != null)
                 {
                     player.LeaveTime = _matchLog.matchEndTime;
                     player.SecondsPlayed += ((DateTime)player.LeaveTime - (DateTime)player.JoinTime).TotalSeconds;

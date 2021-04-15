@@ -16,7 +16,7 @@ namespace Fafnir
             string line;
 
             System.IO.StreamReader file =
-                new System.IO.StreamReader(@"..\..\..\..\log_exmples\L0311048.log");
+                new System.IO.StreamReader(@"..\..\..\..\log_exmples\L0415053.log");
             
             var parsers = new IHLDSLogParser[]
             {
