@@ -2,6 +2,7 @@
 using Fafnir.Models;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 
@@ -13,13 +14,19 @@ namespace Fafnir
 
         static void Main(string[] args)
         {
-            string line;
+            var logFiles = Directory.GetFiles(@"..\..\..\..\log_examples\");
 
-            System.IO.StreamReader file =
-                new System.IO.StreamReader(@"..\..\..\..\log_exmples\L0415053.log");
-            
-            var parsers = new IHLDSLogParser[]
+            Array.Sort(logFiles, (x, y) => String.CompareOrdinal(x, y));
+
+            foreach (var logFile in logFiles.Take(logFiles.Length - 1))
             {
+                string line;
+
+                System.IO.StreamReader file =
+                    new System.IO.StreamReader(logFile);
+
+                var parsers = new IHLDSLogParser[]
+                {
                 new PlayerEnteredGame(_matchLog),
                 new PlayerJoinedTeam(_matchLog),
                 new PlayerDisconnected(_matchLog),
@@ -27,26 +34,26 @@ namespace Fafnir
                 new PlayerKillOtherPlayer(_matchLog),
                 new LoadingMap(_matchLog),
                 new LogFileClosed(_matchLog)
-            };
+                };
 
-            while ((line = file.ReadLine()) != null)
-            {
-                var match = (from p in parsers
-                             where p.IsMatch(line)
-                             select p).SingleOrDefault();
-
-                if(match != null)
+                while ((line = file.ReadLine()) != null)
                 {
-                    match.Execute(line);
-                }
+                    var match = (from p in parsers
+                                 where p.IsMatch(line)
+                                 select p).SingleOrDefault();
 
-                //todo: implement this...
-                //var playerInfectedAnotherPlayerPattern = new Regex(@$"L (?<date>{dateTimeRegEx}: ""(?<player>.*?)"" triggered ""Medic_Infection"" against ""(?<victim>.*?)""");
+                    if (match != null)
+                    {
+                        match.Execute(line);
+                    }
+
+                    //todo: implement this...
+                    //var playerInfectedAnotherPlayerPattern = new Regex(@$"L (?<date>{dateTimeRegEx}: ""(?<player>.*?)"" triggered ""Medic_Infection"" against ""(?<victim>.*?)""");
+                }
             }
 
-            
             //console output for now...
-            foreach (var player in _matchLog.players.Where(p => !p.IsBot))
+            foreach (var player in _matchLog.players)
             {
                 Console.WriteLine("Player: {0}", player.Name);
                 Console.WriteLine("     Time Played: {0} seconds", player.SecondsPlayed);
