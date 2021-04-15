@@ -46,7 +46,7 @@ namespace Fafnir
 
             
             //console output for now...
-            foreach (var player in _matchLog.players)
+            foreach (var player in _matchLog.players.Where(p => !p.IsBot))
             {
                 Console.WriteLine("Player: {0}", player.Name);
                 Console.WriteLine("     Time Played: {0} seconds", player.SecondsPlayed);

@@ -19,6 +19,8 @@ namespace Fafnir.Models
         public int KillCount;
         public int DeathCount;
 
+        public bool IsBot => SteamId == "BOT";
+        
         public class Team
         {
             public string Name;
