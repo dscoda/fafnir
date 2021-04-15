@@ -19,6 +19,11 @@ namespace Fafnir.LogParsers
 
         public void Execute(string input)
         {
+            if (_match.MatchEnded)
+            {
+                return;
+            }
+
             var matched = PlayerDisconnectedPattern.Match(input);
 
             var dateTime = matched.Groups["date"].Value;
