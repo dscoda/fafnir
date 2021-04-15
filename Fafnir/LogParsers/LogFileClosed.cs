@@ -22,18 +22,23 @@ namespace Fafnir.LogParsers
 
             var dateTime = matched.Groups["date"].Value;
 
-            _matchLog.matchEndTime = _matchLog.GetEntryTime(dateTime);
+            if (!_matchLog.MatchEnded)
+            {
+                return;
+            }
 
-            foreach (var player in _matchLog.players)
+            _matchLog.MatchEndTime = _matchLog.GetEntryTime(dateTime);
+
+            foreach (var player in _matchLog.Players)
             {
                 if (player.LeaveTime == null && player.JoinTime != null)
                 {
-                    player.LeaveTime = _matchLog.matchEndTime;
+                    player.LeaveTime = _matchLog.MatchEndTime;
                     player.SecondsPlayed += ((DateTime)player.LeaveTime - (DateTime)player.JoinTime).TotalSeconds;
 
                     foreach (var team in player.Teams.Where(w => w.LeaveTime == null))
                     {
-                        team.LeaveTime = _matchLog.matchEndTime;
+                        team.LeaveTime = _matchLog.MatchEndTime;
                         team.SecondsPlayed += ((DateTime)team.LeaveTime - (DateTime)team.JoinTime).TotalSeconds;
                     }
                 }
@@ -42,7 +47,7 @@ namespace Fafnir.LogParsers
 
                 foreach (var openRole in openRoles)
                 {
-                    openRole.EndTime = _matchLog.matchEndTime;
+                    openRole.EndTime = _matchLog.MatchEndTime;
                     openRole.SecondsPlayed += ((DateTime)openRole.EndTime - openRole.StartTime).TotalSeconds;
                 }
             }

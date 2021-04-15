@@ -1,13 +1,14 @@
-﻿using Fafnir.Models;
+﻿using System;
+using Fafnir.Models;
 using System.Text.RegularExpressions;
 
 namespace Fafnir.LogParsers
 {
     public class LoadingMap : IHLDSLogParser
     {
-        private MatchLog _matchLog;
+        private readonly MatchLog _matchLog;
         private static string dateTimeRegEx = @"\d{2}\/\d{2}\/\d{4} - \d{2}:\d{2}:\d{2}";
-        private static Regex loadingMapPattern = new Regex(@$"L (?<date>{dateTimeRegEx}): Loading map ""(?<map>.*?)""");
+        private static readonly Regex LoadingMapPattern = new Regex(@$"L (?<date>{dateTimeRegEx}): Loading map ""(?<map>.*?)""");
 
         public LoadingMap(MatchLog matchLog)
         {
@@ -16,18 +17,23 @@ namespace Fafnir.LogParsers
 
         public void Execute(string input)
         {
-            var matched = loadingMapPattern.Match(input);
+            var matched = LoadingMapPattern.Match(input);
 
             var dateTime = matched.Groups["date"].Value;
             var map = matched.Groups["map"].Value;
 
-            _matchLog.map = map;
-            _matchLog.matchStartTime = _matchLog.GetEntryTime(dateTime);
+            if (!string.IsNullOrEmpty(_matchLog.Map))
+            {
+                throw new Exception("Log file read out of order or log file is missing.");
+            }
+
+            _matchLog.Map = map;
+            _matchLog.MatchStartTime = _matchLog.GetEntryTime(dateTime);
         }
 
         public bool IsMatch(string input)
         {
-            return loadingMapPattern.IsMatch(input);
+            return LoadingMapPattern.IsMatch(input);
         }
     }
 }

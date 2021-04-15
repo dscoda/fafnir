@@ -27,7 +27,7 @@ namespace Fafnir.LogParsers
             var victim = _matchLog.GetPlayer(victimData);
             var time = _matchLog.GetEntryTime(dateTime);
 
-            _matchLog.kills.Add(new Kill
+            _matchLog.Kills.Add(new Kill
             {
                 TimeStamp = time,
                 KillerName = killer.Name,

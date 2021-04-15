@@ -7,20 +7,30 @@ namespace Fafnir.Models
 {
     public class MatchLog
     {
-        public List<Player> players;
-        public DateTime matchStartTime;
-        public DateTime matchEndTime;
-        public string map;
-        public List<Kill> kills;
+        public List<Player> Players;
+        public DateTime MatchStartTime;
+        public DateTime MatchEndTime;
+        public string Map;
+        public List<Kill> Kills;
+        public string StartingLogFile;
+        public List<string> LogFiles;
+        public bool MatchEnded;
 
-        public MatchLog()
+        public MatchLog(string startingLogFile)
         {
-            players = new List<Player> { };
-            matchStartTime =  new DateTime();
-            matchEndTime = new DateTime();
-            map = string.Empty;
-            kills = new List<Kill> { };
+            Players = new List<Player> { };
+            MatchStartTime =  new DateTime();
+            MatchEndTime = new DateTime();
+            Map = string.Empty;
+            Kills = new List<Kill> { };
+            StartingLogFile = startingLogFile;
+            LogFiles = new List<string>(); 
+            LogFiles.Add(startingLogFile);
+            MatchEnded = false;
         }
+
+        public bool IsValidStart => !string.IsNullOrEmpty(this.Map) && this.MatchStartTime != DateTime.MinValue;
+        public bool IsMatchFinished => MatchEndTime != DateTime.MinValue;
 
         public Player GetPlayer(string playerData)
         {
@@ -33,7 +43,7 @@ namespace Fafnir.Models
             var steamId = matched.Groups[3].Value;
             var team = matched.Groups[4].Value;
 
-            var player = (from p in players
+            var player = (from p in Players
                           where p.Name == name && p.SteamId == steamId
                           select p).SingleOrDefault();
 
@@ -50,9 +60,9 @@ namespace Fafnir.Models
                     Roles = new List<Role> { }
                 };
 
-                players.Add(newPlayer);
+                Players.Add(newPlayer);
 
-                player = (from p in players
+                player = (from p in Players
                           where p.Name == name && p.SteamId == steamId
                           select p).SingleOrDefault();
             }
