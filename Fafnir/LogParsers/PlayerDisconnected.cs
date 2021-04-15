@@ -2,29 +2,30 @@
 using System;
 using System.Linq;
 using System.Text.RegularExpressions;
+using Match = Fafnir.Models.Match;
 
 namespace Fafnir.LogParsers
 {
     public class PlayerDisconnected : IHLDSLogParser
     {
-        private MatchLog _matchLog;
-        private static string dateTimeRegEx = @"\d{2}\/\d{2}\/\d{4} - \d{2}:\d{2}:\d{2}";
-        private static Regex playerDisconnectedPattern = new Regex(@$"L (?<date>{dateTimeRegEx}): ""(?<player>.*?)"" disconnected");
+        private readonly Match _match;
+        private const string DateTimeRegEx = @"\d{2}\/\d{2}\/\d{4} - \d{2}:\d{2}:\d{2}";
+        private static readonly Regex PlayerDisconnectedPattern = new Regex(@$"L (?<date>{DateTimeRegEx}): ""(?<player>.*?)"" disconnected");
 
-        public PlayerDisconnected(MatchLog matchLog)
+        public PlayerDisconnected(Match match)
         {
-            _matchLog = matchLog;
+            _match = match;
         }
 
         public void Execute(string input)
         {
-            var matched = playerDisconnectedPattern.Match(input);
+            var matched = PlayerDisconnectedPattern.Match(input);
 
             var dateTime = matched.Groups["date"].Value;
             var playerData = matched.Groups["player"].Value;
 
-            Player currentPlayer = _matchLog.GetPlayer(playerData);
-            DateTime leaveTime = _matchLog.GetEntryTime(dateTime);
+            Player currentPlayer = _match.GetPlayer(playerData);
+            DateTime leaveTime = _match.GetEntryTime(dateTime);
 
             currentPlayer.LeaveTime = leaveTime;
 
@@ -53,7 +54,7 @@ namespace Fafnir.LogParsers
 
         public bool IsMatch(string input)
         {
-            return playerDisconnectedPattern.IsMatch(input);
+            return PlayerDisconnectedPattern.IsMatch(input);
         }
     }
 }

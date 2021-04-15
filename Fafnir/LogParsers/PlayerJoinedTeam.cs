@@ -2,30 +2,31 @@
 using System;
 using System.Linq;
 using System.Text.RegularExpressions;
+using Match = Fafnir.Models.Match;
 
 namespace Fafnir.LogParsers
 {
     public class PlayerJoinedTeam : IHLDSLogParser
     {
-        private MatchLog _matchLog;
-        private static string dateTimeRegEx = @"\d{2}\/\d{2}\/\d{4} - \d{2}:\d{2}:\d{2}";
-        private static Regex playerJoinedTeamPattern = new Regex(@$"L (?<date>{dateTimeRegEx}): ""(?<player>.*?)"" joined team ""(?<team>.*?)""");
+        private readonly Match _match;
+        private const string DateTimeRegEx = @"\d{2}\/\d{2}\/\d{4} - \d{2}:\d{2}:\d{2}";
+        private static readonly Regex PlayerJoinedTeamPattern = new Regex(@$"L (?<date>{DateTimeRegEx}): ""(?<player>.*?)"" joined team ""(?<team>.*?)""");
 
-        public PlayerJoinedTeam(MatchLog matchLog)
+        public PlayerJoinedTeam(Match match)
         {
-            _matchLog = matchLog;
+            _match = match;
         }
 
         public void Execute(string input)
         {
-            var matched = playerJoinedTeamPattern.Match(input);
+            var matched = PlayerJoinedTeamPattern.Match(input);
 
             var dateTime = matched.Groups["date"].Value;
             var playerData = matched.Groups["player"].Value;
             var teamName = matched.Groups["team"].Value;
 
-            var currentPlayer = _matchLog.GetPlayer(playerData);
-            var time = _matchLog.GetEntryTime(dateTime);
+            var currentPlayer = _match.GetPlayer(playerData);
+            var time = _match.GetEntryTime(dateTime);
             var team = currentPlayer.Teams.SingleOrDefault(s => s.Name == teamName);
             
             currentPlayer.currentTeam = teamName;
@@ -73,7 +74,7 @@ namespace Fafnir.LogParsers
 
         public bool IsMatch(string input)
         {
-            return playerJoinedTeamPattern.IsMatch(input);
+            return PlayerJoinedTeamPattern.IsMatch(input);
         }
     }
 }

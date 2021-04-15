@@ -2,30 +2,31 @@
 using System;
 using System.Linq;
 using System.Text.RegularExpressions;
+using Match = Fafnir.Models.Match;
 
 namespace Fafnir.LogParsers
 {
     public class PlayerChangedRole : IHLDSLogParser
     {
-        private MatchLog _matchLog;
-        private static string dateTimeRegEx = @"\d{2}\/\d{2}\/\d{4} - \d{2}:\d{2}:\d{2}";
-        private static Regex playerChangedRolePattern = new Regex(@$"L (?<date>{dateTimeRegEx}): ""(?<player>.*?)"" changed role to ""(?<newrole>.*?)""");
+        private readonly Match _match;
+        private const string DateTimeRegEx = @"\d{2}\/\d{2}\/\d{4} - \d{2}:\d{2}:\d{2}";
+        private static readonly Regex PlayerChangedRolePattern = new Regex(@$"L (?<date>{DateTimeRegEx}): ""(?<player>.*?)"" changed role to ""(?<newrole>.*?)""");
 
-        public PlayerChangedRole(MatchLog matchLog)
+        public PlayerChangedRole(Match match)
         {
-            _matchLog = matchLog;
+            _match = match;
         }
 
         public void Execute(string input)
         {
-            var matched = playerChangedRolePattern.Match(input);
+            var matched = PlayerChangedRolePattern.Match(input);
 
             var dateTime = matched.Groups["date"].Value;
             var playerData = matched.Groups["player"].Value;
             var newRole = matched.Groups["newrole"].Value;
 
-            var player = _matchLog.GetPlayer(playerData);
-            var time = _matchLog.GetEntryTime(dateTime);
+            var player = _match.GetPlayer(playerData);
+            var time = _match.GetEntryTime(dateTime);
             var playerRole = player.Roles.SingleOrDefault(s => s.Name == newRole);
 
             var openRoles = (from r in player.Roles
@@ -62,7 +63,7 @@ namespace Fafnir.LogParsers
 
         public bool IsMatch(string input)
         {
-            return playerChangedRolePattern.IsMatch(input);
+            return PlayerChangedRolePattern.IsMatch(input);
         }
     }
 }

@@ -1,44 +1,44 @@
-﻿using Fafnir.Models;
-using System;
+﻿using System;
 using System.Linq;
 using System.Text.RegularExpressions;
+using Match = Fafnir.Models.Match;
 
 namespace Fafnir.LogParsers
 {
     public class LogFileClosed : IHLDSLogParser
     {
-        private MatchLog _matchLog;
-        private static string dateTimeRegEx = @"\d{2}\/\d{2}\/\d{4} - \d{2}:\d{2}:\d{2}";
-        private static Regex logFileClosedPattern = new Regex(@$"L (?<date>{dateTimeRegEx}): Log file closed");
+        private readonly Match _match;
+        private const string DateTimeRegEx = @"\d{2}\/\d{2}\/\d{4} - \d{2}:\d{2}:\d{2}";
+        private static readonly Regex LogFileClosedPattern = new Regex(@$"L (?<date>{DateTimeRegEx}): Log file closed");
 
-        public LogFileClosed(MatchLog matchLog)
+        public LogFileClosed(Match match)
         {
-            _matchLog = matchLog;
+            _match = match;
         }
 
         public void Execute(string input)
         {
-            var matched = logFileClosedPattern.Match(input);
+            var matched = LogFileClosedPattern.Match(input);
 
             var dateTime = matched.Groups["date"].Value;
 
-            if (!_matchLog.MatchEnded)
+            if (!_match.MatchEnded)
             {
                 return;
             }
 
-            _matchLog.MatchEndTime = _matchLog.GetEntryTime(dateTime);
+            _match.MatchEndTime = _match.GetEntryTime(dateTime);
 
-            foreach (var player in _matchLog.Players)
+            foreach (var player in _match.Players)
             {
                 if (player.LeaveTime == null && player.JoinTime != null)
                 {
-                    player.LeaveTime = _matchLog.MatchEndTime;
+                    player.LeaveTime = _match.MatchEndTime;
                     player.SecondsPlayed += ((DateTime)player.LeaveTime - (DateTime)player.JoinTime).TotalSeconds;
 
                     foreach (var team in player.Teams.Where(w => w.LeaveTime == null))
                     {
-                        team.LeaveTime = _matchLog.MatchEndTime;
+                        team.LeaveTime = _match.MatchEndTime;
                         team.SecondsPlayed += ((DateTime)team.LeaveTime - (DateTime)team.JoinTime).TotalSeconds;
                     }
                 }
@@ -47,7 +47,7 @@ namespace Fafnir.LogParsers
 
                 foreach (var openRole in openRoles)
                 {
-                    openRole.EndTime = _matchLog.MatchEndTime;
+                    openRole.EndTime = _match.MatchEndTime;
                     openRole.SecondsPlayed += ((DateTime)openRole.EndTime - openRole.StartTime).TotalSeconds;
                 }
             }
@@ -55,7 +55,7 @@ namespace Fafnir.LogParsers
 
         public bool IsMatch(string input)
         {
-            return logFileClosedPattern.IsMatch(input);
+            return LogFileClosedPattern.IsMatch(input);
         }
     }
 }

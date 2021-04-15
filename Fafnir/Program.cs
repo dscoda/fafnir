@@ -18,9 +18,9 @@ namespace Fafnir
 
             Array.Sort(logFiles, (x, y) => String.CompareOrdinal(x, y));
             
-            List<MatchLog> validMatchLogs = new List<MatchLog>();
+            List<Match> validMatchLogs = new List<Match>();
 
-            MatchLog currentMatch = null;
+            Match currentMatch = null;
 
             foreach (var logFile in logFiles.Take(logFiles.Length - 1))
             {
@@ -30,43 +30,39 @@ namespace Fafnir
                 
                 if (currentMatch?.MatchEnded ?? true)
                 {
-                    currentMatch = new MatchLog(logFile);
+                    currentMatch = new Match(logFile);
                 }
                 else
                 {
                     currentMatch.LogFiles.Add(logFile);
                 }
 
-                using (StreamReader file = new StreamReader(logFile))
+                using StreamReader file = new StreamReader(logFile);
+
+                var parsers = new IHLDSLogParser[]
                 {
-                    var parsers = new IHLDSLogParser[]
-                    {
-                        new PlayerEnteredGame(currentMatch),
-                        new PlayerJoinedTeam(currentMatch),
-                        new PlayerDisconnected(currentMatch),
-                        new PlayerChangedRole(currentMatch),
-                        new PlayerKillOtherPlayer(currentMatch),
-                        new LoadingMap(currentMatch),
-                        new LogFileClosed(currentMatch),
-                        new TeamEndingScore(currentMatch)
-                    };
+                    new PlayerEnteredGame(currentMatch),
+                    new PlayerJoinedTeam(currentMatch),
+                    new PlayerDisconnected(currentMatch),
+                    new PlayerChangedRole(currentMatch),
+                    new PlayerKillOtherPlayer(currentMatch),
+                    new LoadingMap(currentMatch),
+                    new LogFileClosed(currentMatch),
+                    new TeamEndingScore(currentMatch)
+                };
                     
-                    while ((line = file.ReadLine()) != null && !invalidMatch)
-                    {
-                        var match = (from p in parsers
-                            where p.IsMatch(line)
-                            select p).SingleOrDefault();
+                while ((line = file.ReadLine()) != null && !invalidMatch)
+                {
+                    var match = (from p in parsers
+                        where p.IsMatch(line)
+                        select p).SingleOrDefault();
 
-                        if (match != null)
-                        {
-                            match.Execute(line);
-                        }
-                    }
+                    match?.Execute(line);
+                }
 
-                    if (currentMatch.IsMatchFinished)
-                    {
-                        validMatchLogs.Add(currentMatch);
-                    }
+                if (currentMatch.IsMatchFinished)
+                {
+                    validMatchLogs.Add(currentMatch);
                 }
             }
 

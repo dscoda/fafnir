@@ -1,33 +1,34 @@
 ﻿using Fafnir.Models;
 using System.Text.RegularExpressions;
+using Match = Fafnir.Models.Match;
 
 namespace Fafnir.LogParsers
 {
     public class PlayerKillOtherPlayer : IHLDSLogParser
     {
-        private MatchLog _matchLog;
-        private static string dateTimeRegEx = @"\d{2}\/\d{2}\/\d{4} - \d{2}:\d{2}:\d{2}";
-        private static Regex playerKillOtherPlayerPattern = new Regex(@$"L (?<date>{dateTimeRegEx}): ""(?<killer>.*?)"" killed ""(?<victim>.*?)"" with ""(?<weapon>.*?)""");
+        private readonly Match _match;
+        private const string DateTimeRegEx = @"\d{2}\/\d{2}\/\d{4} - \d{2}:\d{2}:\d{2}";
+        private static readonly Regex PlayerKillOtherPlayerPattern = new Regex(@$"L (?<date>{DateTimeRegEx}): ""(?<killer>.*?)"" killed ""(?<victim>.*?)"" with ""(?<weapon>.*?)""");
 
-        public PlayerKillOtherPlayer(MatchLog matchLog)
+        public PlayerKillOtherPlayer(Match match)
         {
-            _matchLog = matchLog;
+            _match = match;
         }
 
         public void Execute(string input)
         {
-            var matched = playerKillOtherPlayerPattern.Match(input);
+            var matched = PlayerKillOtherPlayerPattern.Match(input);
 
             var dateTime = matched.Groups["date"].Value;
             var killerData = matched.Groups["killer"].Value;
             var victimData = matched.Groups["victim"].Value;
             var weapon = matched.Groups["weapon"].Value;
 
-            var killer = _matchLog.GetPlayer(killerData);
-            var victim = _matchLog.GetPlayer(victimData);
-            var time = _matchLog.GetEntryTime(dateTime);
+            var killer = _match.GetPlayer(killerData);
+            var victim = _match.GetPlayer(victimData);
+            var time = _match.GetEntryTime(dateTime);
 
-            _matchLog.Kills.Add(new Kill
+            _match.Kills.Add(new Kill
             {
                 TimeStamp = time,
                 KillerName = killer.Name,
@@ -44,7 +45,7 @@ namespace Fafnir.LogParsers
 
         public bool IsMatch(string input)
         {
-            return playerKillOtherPlayerPattern.IsMatch(input);
+            return PlayerKillOtherPlayerPattern.IsMatch(input);
         }
     }
 }

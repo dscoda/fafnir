@@ -5,7 +5,7 @@ using System.Text.RegularExpressions;
 
 namespace Fafnir.Models
 {
-    public class MatchLog
+    public class Match
     {
         public List<Player> Players;
         public DateTime MatchStartTime;
@@ -16,7 +16,7 @@ namespace Fafnir.Models
         public List<string> LogFiles;
         public bool MatchEnded;
 
-        public MatchLog(string startingLogFile)
+        public Match(string startingLogFile)
         {
             Players = new List<Player> { };
             MatchStartTime =  new DateTime();

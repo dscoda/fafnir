@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Fafnir.LogParsers
+﻿namespace Fafnir.LogParsers
 {
     interface IHLDSLogParser
     {
