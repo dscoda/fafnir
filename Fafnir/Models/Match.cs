@@ -57,7 +57,8 @@ namespace Fafnir.Models
                     LeaveTime = null,
                     SecondsPlayed = 0,
                     Teams = new List<Player.Team> { },
-                    Roles = new List<Role> { }
+                    Roles = new List<Role> { },
+                    TimesKicked = 0
                 };
 
                 Players.Add(newPlayer);

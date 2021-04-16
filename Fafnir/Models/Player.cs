@@ -17,6 +17,7 @@ namespace Fafnir.Models
         public List<Role> Roles;
         public int KillCount;
         public int DeathCount;
+        public long TimesKicked;
 
         public bool IsBot => SteamId == "BOT";
         
