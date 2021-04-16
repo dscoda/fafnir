@@ -48,7 +48,8 @@ namespace Fafnir
                     new PlayerKillOtherPlayer(currentMatch),
                     new LoadingMap(currentMatch),
                     new LogFileClosed(currentMatch),
-                    new TeamEndingScore(currentMatch)
+                    new TeamEndingScore(currentMatch),
+                    new PlayerKicked(currentMatch)
                 };
                     
                 while ((line = file.ReadLine()) != null && !invalidMatch)

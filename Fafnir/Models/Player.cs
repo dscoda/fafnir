@@ -6,6 +6,7 @@ namespace Fafnir.Models
     public class Player
     {
         public string Name;
+        public string LocalId;
         public string SteamId;
         public DateTime? JoinTime;
         public DateTime? LeaveTime;
@@ -16,6 +17,7 @@ namespace Fafnir.Models
         public List<Role> Roles;
         public int KillCount;
         public int DeathCount;
+        public long TimesKicked;
 
         public bool IsBot => SteamId == "BOT";
         
